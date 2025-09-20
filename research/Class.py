@@ -5,13 +5,13 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 class LSTMNeuralNet(nn.Module):
-    def __init__(self, num_feat = 14, hidden_dim = 128, layers = 3, num_outputs = 2):
+    def __init__(self, num_feat = 14, hidden_dim = 128, layers = 2, num_outputs = 2):
         super().__init__()
         self.lstm = nn.LSTM(input_size = num_feat, hidden_size = hidden_dim, num_layers = layers, batch_first = True)
         self.lin1 = nn.Linear(hidden_dim, 64)
         self.lin2 = nn.Linear(64, num_outputs)
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.4)
     def forward(self,x):
         _, (hidden_states, _) = self.lstm(x)
         x = self.dropout(hidden_states[-1])
