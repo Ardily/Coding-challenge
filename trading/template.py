@@ -69,6 +69,8 @@ def cancel_order(ticker: Ticker, order_id: int) -> bool:
     """
     return 0
 
+print('hello world')
+
 class Strategy:
     """Template for a strategy."""
 
