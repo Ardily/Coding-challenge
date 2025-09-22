@@ -87,7 +87,7 @@ class Strategy:
 
     def __init__(self) -> None:
         """Your initialization code goes here."""
-        self.orderbook = defaultdict(lambda: defaultdict(float))
+        self.orderbook = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
         self.trade_exists = False
         self.reset_state()
 
@@ -110,7 +110,7 @@ class Strategy:
         self.tick = ticker
         self.p = price
         self.quant = quantity
-        self.last_trade = [(self.tick, self.p), self.quant]
+        self.last_trade = [self.tick, self.p, self.quant]
         self.trade_exists = True
 
         print(f"Python Trade update: {ticker} {side} {quantity} shares @ {price}")
@@ -131,16 +131,15 @@ class Strategy:
             Volume placed into orderbook
         """
         
-        
         if side == side.BUY:
-            self.orderbook['BUY'][(ticker, price)] += quantity
+            self.orderbook['BUY'][ticker][price] += quantity
         
         else:
-            self.orderbook['SELL'][(ticker,price)] += quantity
+            self.orderbook['SELL'][ticker][price] += quantity
 
         if self.trade_exists:
-            self.orderbook['BUY'][self.last_trade[0]] -= self.quant
-            self.orderbook['SELL'][self.last_trade[0]] -= self.quant
+            self.orderbook['BUY'][self.last_trade[0]][self.last_trade[1]] -= self.last_trade[2]
+            self.orderbook['SELL'][self.last_trade[0]][self.last_trade[1]] -= self.last_trade[2]
             self.trade_exists = False
 
 
@@ -217,7 +216,8 @@ class Strategy:
             self.reset_state()
             return
 
-    def mc_prob(lead: int,
+    def mc_prob(self,
+                lead: int,
                 time: float,
                 spp: float = 15,
                 h_ppp: float = 1,
@@ -261,6 +261,14 @@ class Strategy:
     
 
 
-    def check_order_book():
-        pass
+    def check_order_book(self, ticker: Ticker):
+
+        if self.mc_prob(lead, time, spp, h_ppp, a_ppp, disp, sim, ball):
+            self.min_market_price = min(self.orderbook['BUY'][ticker].keys())
+            self.max_market_price = max(self.orderbook['SELL'][ticker].keys())
+
+            if 
+
+
+
 
