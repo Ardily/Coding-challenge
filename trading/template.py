@@ -83,6 +83,15 @@ class Strategy:
         Note: In production execution, the game will start from the beginning
         and will not be replayed.
         """
+        self.swaps = 0
+        self.lead = 0
+        self.time = 0.0
+        self.has_ball = None
+        self.a_ppp = 1.1
+        self.h_ppp = 1.1
+        self.hn_p = 0
+        self.an_p = 0
+
         pass
 
     def __init__(self) -> None:
@@ -90,6 +99,12 @@ class Strategy:
         self.orderbook = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
         self.trade_exists = False
         self.reset_state()
+        self.swaps = 0
+        self.lead = 0
+        self.hn_p = 0
+        self.an_p = 0
+        self.spp = 15.0
+        self.period_start = 2880
 
     def on_trade_update(
         self, ticker: Ticker, side: Side, quantity: float, price: float
@@ -207,7 +222,20 @@ class Strategy:
         time_seconds (Optional)
             Game time remaining in seconds
         """
+        self.swaps = self.possession(event_type, home_away, rebound_type, self.swaps)
+        self.lead = home_score - away_score
+        self.time = time_seconds
 
+        if event_type == 'JUMP_BALL' and time_seconds in (2880, 2400):
+            start_time = time_seconds
+        else:
+            start_time = 2640
+        if (home_score + away_score) > 20 and self.swaps > 20 and self.hn_p !=0 and self.an_p != 0:
+            self.spp = (start_time - time_seconds) / self.swaps
+            if self.spp < 0:
+                self.spp = (2880 - time_seconds) / self.swaps
+            self.h_ppp = home_score / self.hn_p
+            self.a_ppp = away_score / self.an_p
         print(f"{event_type} {home_score} - {away_score}")
 
         if event_type == "END_GAME":
@@ -215,6 +243,12 @@ class Strategy:
             # game ends. See reset_state() for more details.
             self.reset_state()
             return
+
+    def inc_position(self, team):
+        if team == 'home':
+            self.hn_p += 1
+        elif team == 'away':
+            self.an_p += 1
 
     def mc_prob(self,
                 lead: int,
@@ -263,11 +297,36 @@ class Strategy:
 
     def check_order_book(self, ticker: Ticker):
 
-        if self.mc_prob(lead, time, spp, h_ppp, a_ppp, disp, sim, ball):
+        if self.mc_prob(self.lead, self.time, self.spp, self.h_ppp, self.a_ppp, ball = self.has_ball):
             self.min_market_price = min(self.orderbook['BUY'][ticker].keys())
             self.max_market_price = max(self.orderbook['SELL'][ticker].keys())
 
             if 
+    
+    def possession(self, event_type, team, rebound, swaps):
+        if team not in ('home', 'away'):
+            return swaps
+        
+        if event_type in ('SCORE', 'TURNOVER'):
+            self.has_ball = 'away' if team == 'home' else 'home'
+            swaps += 1
+            self.inc_position(self.has_ball)
+
+        elif event_type == 'STEAL':
+            self.has_ball = team
+            swaps += 1
+            self.inc_position(self.has_ball)
+        elif event_type == 'REBOUND':
+            if rebound == 'DEFENSIVE':
+                self.has_ball = team
+                swaps += 1
+                self.inc_position(self.has_ball)
+        
+        elif event_type == 'JUMP_BALL':
+            self.has_ball = team
+            swaps += 1
+            self.inc_position(self.has_ball)
+        return swaps
 
 
 
