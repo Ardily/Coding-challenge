@@ -7,6 +7,7 @@ Algorithmic strategy template
 from enum import Enum
 from typing import Optional
 import numpy as np
+from collections import defaultdict
 
 class Side(Enum):
     BUY = 0
@@ -86,7 +87,8 @@ class Strategy:
 
     def __init__(self) -> None:
         """Your initialization code goes here."""
-        self.orderbook = {}
+        self.orderbook = defaultdict(lambda: defaultdict(float))
+        self.trade_exists = False
         self.reset_state()
 
     def on_trade_update(
@@ -104,6 +106,13 @@ class Strategy:
         price
             Price that trade was executed at
         """
+
+        self.tick = ticker
+        self.p = price
+        self.quant = quantity
+        self.last_trade = [(self.tick, self.p), self.quant]
+        self.trade_exists = True
+
         print(f"Python Trade update: {ticker} {side} {quantity} shares @ {price}")
 
     def on_orderbook_update(
@@ -123,9 +132,16 @@ class Strategy:
         """
         
         
-        if side.BUY.name == 'BUY':
-            self.orderbook[()]
+        if side == side.BUY:
+            self.orderbook['BUY'][(ticker, price)] += quantity
+        
+        else:
+            self.orderbook['SELL'][(ticker,price)] += quantity
 
+        if self.trade_exists:
+            self.orderbook['BUY'][self.last_trade[0]] -= self.quant
+            self.orderbook['SELL'][self.last_trade[0]] -= self.quant
+            self.trade_exists = False
 
 
     def on_account_update(
