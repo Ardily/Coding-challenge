@@ -5,10 +5,10 @@ import pandas as pd
 from pathlib import Path
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
+import numpy as np, pandas as pd
+from collections import deque
 
 class random_decision_tree:
-
-
     def __init__(self, train_data_file_name, test_data_file_name):
         # finding folder path and converting csv to dataframe
         self.folder_path = os.path.dirname(Path(__file__).resolve())
@@ -16,8 +16,12 @@ class random_decision_tree:
         self.train_data_path = os.path.join(self.folder_path, train_data_file_name)
 
         self.train_df = pd.read_csv(self.train_data_path)
+        self.train_df = self.add_lags(self.train_df)
         self.x_df = self.train_df.loc[:, 'time':'N']
         self.y_df = self.train_df.loc[:, ['Y1', 'Y2']]
+
+        lag_cols = [c for c in self.train_df.columns if ('_lag' in c or '_roll' in c)]
+        self.x_df = pd.concat([self.x_df, self.train_df[lag_cols]], axis = 1)
 
         self.test_df = pd.read_csv(self.test_data_path)
         self.x_test = self.test_df.loc[:, 'time':'N']
@@ -55,7 +59,7 @@ class random_decision_tree:
 
     def initialise_train_predict_model(self):
         # initialising, training model & making prediction
-        self.model = RandomForestRegressor(n_estimators=800, bootstrap=True, oob_score=True, random_state=42, n_jobs=-1)
+        self.model = RandomForestRegressor(n_estimators=800, bootstrap=True, oob_score=True, n_jobs=-1)
 
         if self._ran_testing_model_with_split_data:
             self.model.fit(self.x_train, self.y_train)
@@ -94,7 +98,59 @@ class random_decision_tree:
 
         else:
             pass
+    
+    def add_lags(self, df, cols = ('Y2',), lags = (1,5,10,25,100), rolls = (5,10,25,100)):
+        df = df.copy()
+        for target in cols:
 
+            past = df[target].shift(1)
+            exp_mean = past.expanding(min_periods = 1).mean()
+            exp_std = past.expanding(min_periods = 2).std()
+
+            exp_mean2 = exp_mean.fillna(0.0)
+            exp_std2 = exp_std.fillna(0.0)
+            for l in lags:
+                col = df[target].shift(l)
+                df[f'{target}_lag{l}'] = col.fillna(exp_mean)
+            for r in rolls:
+                roll_mean = past.rolling(r, min_periods = r).mean()
+                roll_std = past.rolling(r, min_periods = r).std()
+                df[f'{target}_rollmean{r}'] = roll_mean.fillna(exp_mean2)
+                df[f'{target}_rollstd{r}'] = roll_std.fillna(exp_std2)
+        return df
+    
+    def predict_external_continuation(self, lags=(1,), rolls=(5,10)):
+        K = max(max(lags), max(rolls))
+        feature_order = list(self.x_df.columns)
+        base_X = self.test_df.loc[:, 'time':'N'].reset_index(drop=True)
+        y2 = self.train_df['Y2'].astype(float).values
+        win = deque((y2[-K:] if len(y2) >= K else y2).tolist(), maxlen=K)
+        preds = []
+        for i in range(len(base_X)):
+            w = np.array(win, dtype=float)
+            m = w.mean() if w.size else 0.0
+            s = (w.std(ddof=1) if w.size > 1 else 0.0)
+            lag_feats = {f"Y2_lag{L}": (float(w[-L]) if w.size >= L else m) for L in lags}
+            roll_feats = {}
+            for r in rolls:
+                if w.size >= r:
+                    seg = w[-r:]
+                    roll_feats[f"Y2_rollmean{r}"] = float(seg.mean())
+                    roll_feats[f"Y2_rollstd{r}"]  = float(seg.std(ddof=1))
+                else:
+                    roll_feats[f"Y2_rollmean{r}"] = m
+                    roll_feats[f"Y2_rollstd{r}"]  = s
+            row = {c: base_X.iloc[i][c] for c in base_X.columns}
+            row.update(lag_feats); row.update(roll_feats)
+            for c in feature_order:
+                row.setdefault(c, 0.0)
+            X_row = pd.DataFrame([row], columns=feature_order)
+            y_hat = self.model.predict(X_row)[0]
+            preds.append(y_hat)
+            win.append(float(y_hat[1]))
+        return pd.DataFrame(np.asarray(preds), columns=["Y1_pred","Y2_pred"])
+
+                
 
 if __name__ == '__main__':
     rdt = random_decision_tree('data/train.csv', 'data/test.csv')
@@ -102,6 +158,13 @@ if __name__ == '__main__':
     # rdt.check_df()
     rdt.initialise_train_predict_model()
     rdt.evaluate_model()
+    
+    rdt._ran_testing_model_with_split_data = False
+    rdt.initialise_train_predict_model()
+    ext_predictions = rdt.predict_external_continuation()
 
+    into_csv = pd.DataFrame({'id': rdt.test_df['id'].values,
+                            'Y1': ext_predictions['Y1_pred'],
+                            'Y2': ext_predictions['Y2_pred'].values})
 
-
+    into_csv.to_csv('submission.csv', index = False)
