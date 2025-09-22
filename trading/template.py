@@ -200,8 +200,6 @@ class Strategy:
             # game ends. See reset_state() for more details.
             self.reset_state()
             return
-    
-    import numpy as np
 
     def mc_prob(lead: int,
                 time: float,
