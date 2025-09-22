@@ -6,6 +6,7 @@ Algorithmic strategy template
 
 from enum import Enum
 from typing import Optional
+import numpy as np
 
 class Side(Enum):
     BUY = 0
@@ -199,6 +200,52 @@ class Strategy:
             # game ends. See reset_state() for more details.
             self.reset_state()
             return
+    
+    import numpy as np
+
+    def mc_prob(lead: int,
+                time: float,
+                spp: float = 15,
+                h_ppp: float = 1,
+                a_ppp: float = 1,
+                disp: float = 10,
+                sim: int = 50000,
+                ball: str | None = None):
+        
+        pos_left = max(0, time) / max(4, spp)
+        N = np.random.poisson(pos_left, sim)
+
+        if ball == 'home':
+            n_h = (N + 1) // 2
+            n_a = N - n_h
+        elif ball == 'away':
+            n_a = (N + 1) // 2
+            n_h = N - n_a
+        else:
+            n_h = N // 2
+            n_a = N - n_h
+        
+        h_fut = n_h * h_ppp
+        a_fut = n_a * a_ppp
+
+        if disp > 0.1:
+            lambda_h = np.random.gamma(shape = disp, scale = (h_fut / disp))
+            lambda_a = np.random.gamma(shape = disp, scale =  (a_fut / disp))
+        
+            pts_h = np.random.poisson(lambda_h)
+            pts_a = np.random.poisson(lambda_a)
+        
+            margin = lead + (pts_h - pts_a)
+        
+            wins = (margin > 0).sum()
+            prob = wins / sim
+        
+            price = prob * 100
+        
+            return price
+        return None
+    
+
 
     def check_order_book():
         pass
