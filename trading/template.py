@@ -69,8 +69,6 @@ def cancel_order(ticker: Ticker, order_id: int) -> bool:
     """
     return 0
 
-print('hello world')
-
 class Strategy:
     """Template for a strategy."""
 
@@ -87,6 +85,7 @@ class Strategy:
 
     def __init__(self) -> None:
         """Your initialization code goes here."""
+        self.orderbook = {}
         self.reset_state()
 
     def on_trade_update(
@@ -121,7 +120,12 @@ class Strategy:
         quantity
             Volume placed into orderbook
         """
-        pass
+        
+        
+        if side.BUY.name == 'BUY':
+            self.orderbook[()]
+
+
 
     def on_account_update(
         self,
@@ -195,3 +199,7 @@ class Strategy:
             # game ends. See reset_state() for more details.
             self.reset_state()
             return
+
+    def check_order_book():
+        pass
+
