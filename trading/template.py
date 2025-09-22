@@ -297,11 +297,34 @@ class Strategy:
 
     def check_order_book(self, ticker: Ticker):
 
-        if self.mc_prob(self.lead, self.time, self.spp, self.h_ppp, self.a_ppp, ball = self.has_ball):
-            self.min_market_price = min(self.orderbook['BUY'][ticker].keys())
-            self.max_market_price = max(self.orderbook['SELL'][ticker].keys())
+        self.fair_price = self.mc_prob(self.lead, self.time, self.spp, self.h_ppp, self.a_ppp, ball = self.has_ball)
 
-            if 
+        if self.fair_price:
+            sells = sorted(self.orderbook['SELL'][ticker].keys())
+            buys = sorted(self.orderbook['BUY'][ticker].keys(), reverse=True)
+            quantity = 10000 // self.fair_price
+
+            for sell, buy in zip(sells, buys):
+                if self.fair_price - 3 > sell:
+                    if quantity > self.orderbook['SELL'][ticker][sell]:
+                        place_limit_order(Side(0), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, True)
+                        quantity -= self.orderbook['SELL'][ticker][sell]
+
+                    else:
+                        place_limit_order(Side(0), Ticker(0), quantity, sell, True)
+                        break
+
+                elif self.fair_price + 3 < buy:
+                    if quantity > self.orderbook['BUY'][ticker][buy]:
+                        place_limit_order(Side(0), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, True)
+                        quantity -= self.orderbook['BUY'][ticker][buy]
+
+                    else:
+                        place_limit_order(Side(0), Ticker(0), quantity, buy, True)
+                        break
+
+                else:
+                    pass
     
     def possession(self, event_type, team, rebound, swaps):
         if team not in ('home', 'away'):
