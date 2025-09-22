@@ -146,7 +146,7 @@ class Strategy:
             Volume placed into orderbook
         """
         
-        if side == side.BUY:
+        if side == Side.BUY:
             self.orderbook['BUY'][ticker][price] += quantity
         
         else:
@@ -299,22 +299,13 @@ class Strategy:
 
         self.fair_price = self.mc_prob(self.lead, self.time, self.spp, self.h_ppp, self.a_ppp, ball = self.has_ball)
 
-        if self.fair_price:
+        if self.fair_price is not None:
             sells = sorted(self.orderbook['SELL'][ticker].keys())
             buys = sorted(self.orderbook['BUY'][ticker].keys(), reverse=True)
             quantity = 10000 // self.fair_price
 
-            for sell, buy in zip(sells, buys):
-                if self.fair_price - 3 > sell:
-                    if quantity > self.orderbook['SELL'][ticker][sell]:
-                        place_limit_order(Side(0), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, True)
-                        quantity -= self.orderbook['SELL'][ticker][sell]
-
-                    else:
-                        place_limit_order(Side(0), Ticker(0), quantity, sell, True)
-                        break
-
-                elif self.fair_price + 3 < buy:
+            for buy in buys:
+                if self.fair_price + 3 < buy:
                     if quantity > self.orderbook['BUY'][ticker][buy]:
                         place_limit_order(Side(0), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, True)
                         quantity -= self.orderbook['BUY'][ticker][buy]
@@ -325,6 +316,17 @@ class Strategy:
 
                 else:
                     pass
+                
+            for sell in sells:
+                if self.fair_price - 3 > sell:
+                    if quantity > self.orderbook['SELL'][ticker][sell]:
+                        place_limit_order(Side(0), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, True)
+                        quantity -= self.orderbook['SELL'][ticker][sell]
+
+                    else:
+                        place_limit_order(Side(0), Ticker(0), quantity, sell, True)
+                        break
+            
     
     def possession(self, event_type, team, rebound, swaps):
         if team not in ('home', 'away'):
