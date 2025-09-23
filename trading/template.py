@@ -246,6 +246,7 @@ class Strategy:
                 self.spp = (2880 - time_seconds) / self.swaps
             self.h_ppp = home_score / self.hn_p
             self.a_ppp = away_score / self.an_p
+
         print(f"{event_type} {home_score} - {away_score}")
 
         if event_type == "END_GAME":
@@ -253,7 +254,8 @@ class Strategy:
             # game ends. See reset_state() for more details.
             self.reset_state()
             return
-        self.check_order_book(Ticker(0))    
+        if start_time - self.time > 60:
+            self.check_order_book(Ticker(0)) 
 
     def inc_position(self, team):
         if team == 'home':
