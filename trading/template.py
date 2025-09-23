@@ -104,7 +104,7 @@ class Strategy:
         self.h_ppp = 1.1
         self.a_ppp = 1.1
         self.order_id = False
-
+        self.output = True
     def on_trade_update(
         self, ticker: Ticker, side: Side, quantity: float, price: float
     ) -> None:
@@ -328,8 +328,8 @@ class Strategy:
                         place_limit_order(Side(0), Ticker(0), quantity, sell, True)
                         break
             if self.order_id:
-                output = cancel_order(Ticker(0), self.order_id)
-            if output == True:
+                self.output = cancel_order(Ticker(0), self.order_id)
+            if self.output == True:
                 self.order_id = place_limit_order(Side(1), Ticker(0), self.inventory[ticker], self.fair_price, False)        
     
     def possession(self, event_type, team, rebound, swaps):
