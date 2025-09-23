@@ -100,6 +100,7 @@ class Strategy:
         self.an_p = 0
         self.spp = 15.0
         self.period_start = 2880
+        self.inventory = {}
 
     def on_trade_update(
         self, ticker: Ticker, side: Side, quantity: float, price: float
@@ -175,7 +176,10 @@ class Strategy:
         capital_remaining
             Amount of capital after fulfilling order
         """
-        pass
+        if side == Side.BUY:
+            self.inventory[ticker] += quantity
+        else:
+            self.inventory[ticker] -= quantity 
 
     def on_game_event_update(self,
                            event_type: str,
@@ -303,11 +307,11 @@ class Strategy:
             for buy in buys:
                 if self.fair_price + 3 < buy:
                     if quantity > self.orderbook['BUY'][ticker][buy]:
-                        place_limit_order(Side(0), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, True)
+                        place_limit_order(Side(1), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, True)
                         quantity -= self.orderbook['BUY'][ticker][buy]
 
                     else:
-                        place_limit_order(Side(0), Ticker(0), quantity, buy, True)
+                        place_limit_order(Side(1), Ticker(0), quantity, buy, True)
                         break
         
             for sell in sells:
@@ -319,6 +323,8 @@ class Strategy:
                     else:
                         place_limit_order(Side(0), Ticker(0), quantity, sell, True)
                         break
+
+            place_limit_order(Side(1), Ticker(0), self.inventory[ticker], self.fair_price + 2, False)    
             
             
     
