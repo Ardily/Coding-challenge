@@ -145,7 +145,7 @@ class Strategy:
             Volume placed into orderbook
         """
         
-        if side == Side.BUY:
+        if side is Side.BUY:
             self.orderbook['BUY'][ticker][price] += quantity
         
         else:
@@ -179,7 +179,7 @@ class Strategy:
         capital_remaining
             Amount of capital after fulfilling order
         """
-        if side == Side.BUY:
+        if side is Side.BUY:
             self.inventory[Ticker(0)] += quantity
         else:
             self.inventory[Ticker(0)] -= quantity 
@@ -260,7 +260,7 @@ class Strategy:
                 h_ppp: float = 1,
                 a_ppp: float = 1,
                 disp: float = 12,
-                sim: int = 500000,
+                sim: int = 50000,
                 ball: str | None = None):
         
         pos_left = max(0, time) / max(4, spp)
@@ -283,8 +283,8 @@ class Strategy:
             lambda_h = np.random.gamma(shape = disp, scale = (h_fut / disp), size = sim)
             lambda_a = np.random.gamma(shape = disp, scale =  (a_fut / disp), size = sim)
         
-            pts_h = np.random.poisson(lambda_h) * 2
-            pts_a = np.random.poisson(lambda_a) * 2
+            pts_h = np.random.poisson(lambda_h)
+            pts_a = np.random.poisson(lambda_a)
         
             margin = lead + (pts_h - pts_a)
         
