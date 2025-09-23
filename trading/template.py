@@ -258,7 +258,7 @@ class Strategy:
                 spp: float = 15,
                 h_ppp: float = 1,
                 a_ppp: float = 1,
-                disp: float = 10,
+                disp: float = 8,
                 sim: int = 50000,
                 ball: str | None = None):
         
@@ -279,8 +279,8 @@ class Strategy:
         a_fut = n_a * a_ppp
 
         if disp > 0.1:
-            lambda_h = np.random.gamma(shape = disp, scale = (h_fut / disp))
-            lambda_a = np.random.gamma(shape = disp, scale =  (a_fut / disp))
+            lambda_h = np.random.gamma(shape = disp, scale = (h_fut / disp), size = sim)
+            lambda_a = np.random.gamma(shape = disp, scale =  (a_fut / disp), size = sim)
         
             pts_h = np.random.poisson(lambda_h)
             pts_a = np.random.poisson(lambda_a)
@@ -288,7 +288,8 @@ class Strategy:
             margin = lead + (pts_h - pts_a)
         
             wins = (margin > 0).sum()
-            prob = wins / sim
+            ties = (margin == 0).sum()
+            prob = (wins + 0.5 * ties) / sim
         
             price = prob * 100
         
