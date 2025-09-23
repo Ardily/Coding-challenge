@@ -146,10 +146,10 @@ class Strategy:
             Volume placed into orderbook
         """
         
-        if side is Side.BUY:
+        if side == Side.BUY:
             self.orderbook['BUY'][ticker][price] += quantity
         
-        elif side is Side.SELL:
+        elif side == Side.SELL:
             self.orderbook['SELL'][ticker][price] += quantity
         
         else:
@@ -183,10 +183,10 @@ class Strategy:
         capital_remaining
             Amount of capital after fulfilling order
         """
-        if side is Side.BUY:
+        if side == Side.BUY:
             self.inventory[Ticker(0)] += quantity
 
-        elif side is Side.SELL:
+        elif side == Side.SELL:
             self.inventory[Ticker(0)] -= quantity
 
         else:
@@ -255,7 +255,7 @@ class Strategy:
             self.reset_state()
             return
         if start_time - self.time > 60:
-            self.check_order_book(Ticker(0)) 
+            self.check_order_book(Ticker(0))
 
     def inc_position(self, team):
         if team == 'home':
