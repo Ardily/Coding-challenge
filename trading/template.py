@@ -83,9 +83,20 @@ class Strategy:
         Note: In production execution, the game will start from the beginning
         and will not be replayed.
         """
+        self.swaps = 0
         self.lead = 0
-        self.time = 0.0
-        self.has_ball = None
+        self.time = 0
+        self.hn_p = 0
+        self.an_p = 0
+        self.spp = 15.0
+        self.period_start = 2880
+        self.inventory = defaultdict(float)
+        self.h_ppp = 1.1
+        self.a_ppp = 1.1
+        self.order_id = False
+        self.output = True
+        self.bids = {}
+        self.asks = {}
 
         pass
 
@@ -105,6 +116,8 @@ class Strategy:
         self.a_ppp = 1.1
         self.order_id = False
         self.output = True
+        self.bids = {}
+        self.asks = {}
 
     def on_trade_update(
         self, ticker: Ticker, side: Side, quantity: float, price: float
@@ -121,12 +134,6 @@ class Strategy:
         price
             Price that trade was executed at
         """
-
-        self.tick = ticker
-        self.p = price
-        self.quant = quantity
-        self.last_trade = [self.tick, self.p, self.quant]
-        self.trade_exists = True
 
         print(f"Python Trade update: {ticker} {side} {quantity} shares @ {price}")
 
@@ -146,20 +153,37 @@ class Strategy:
             Volume placed into orderbook
         """
         
-        if side == Side.BUY:
-            self.orderbook['BUY'][ticker][price] += quantity
+        book = self.bids if side == Side.BUY else self.asks
         
-        elif side == Side.SELL:
-            self.orderbook['SELL'][ticker][price] += quantity
-        
+        if price in book:
+            book[price] += quantity
         else:
-            pass
+            book[price] = quantity
 
-        if self.trade_exists:
-            self.orderbook['BUY'][self.last_trade[0]][self.last_trade[1]] -= self.last_trade[2]
-            self.orderbook['SELL'][self.last_trade[0]][self.last_trade[1]] -= self.last_trade[2]
-            self.trade_exists = False
 
+    def on_orderbook_snapshot(self, ticker: Ticker, bids: list, asks: list) -> None:
+        """Called periodically with a complete snapshot of the orderbook.
+
+        This provides the full current state of all bids and asks, useful for 
+        verification and algorithms that need the complete market picture.
+
+        Parameters
+        ----------
+        ticker
+            Ticker of the orderbook snapshot (Ticker.TEAM_A)
+        bids
+            List of (price, quantity) tuples for all current bids, sorted by price descending
+        asks  
+            List of (price, quantity) tuples for all current asks, sorted by price ascending
+        """
+        self.bids.clear()
+        self.asks.clear()
+
+        for p, q in bids:
+            self.bids[p] = q
+        for p, q in asks:
+            self.asks[p] = q
+        pass
 
     def on_account_update(
         self,
@@ -333,7 +357,7 @@ class Strategy:
                             break
         
             for sell in sells:
-                if self.inventory(Ticker(0)) > 800:
+                if self.inventory[Ticker(0)] > 800:
                     continue
 
                 else:
@@ -345,6 +369,8 @@ class Strategy:
                         else:
                             place_limit_order(Side(0), Ticker(0), quantity, sell, True)
                             break
+                orders = self.inventory / 10
+                
     
     def possession(self, event_type, team, rebound, swaps):
         if team not in ('home', 'away'):
