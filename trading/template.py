@@ -325,8 +325,7 @@ class Strategy:
                     else:
                         place_limit_order(Side(0), Ticker(0), quantity, sell, True)
                         break
-
-            place_limit_order(Side(1), Ticker(0), self.inventory[ticker], self.fair_price + 2, False)    
+            place_limit_order(Side(1), Ticker(0), self.inventory[ticker], self.fair_price, False)    
             
             
     
