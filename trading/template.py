@@ -100,7 +100,7 @@ class Strategy:
         self.an_p = 0
         self.spp = 15.0
         self.period_start = 2880
-        self.inventory = {}
+        self.inventory = defaultdict(float)
 
     def on_trade_update(
         self, ticker: Ticker, side: Side, quantity: float, price: float
