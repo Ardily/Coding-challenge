@@ -177,9 +177,9 @@ class Strategy:
             Amount of capital after fulfilling order
         """
         if side == Side.BUY:
-            self.inventory[ticker] += quantity
+            self.inventory[Ticker(0)] += quantity
         else:
-            self.inventory[ticker] -= quantity 
+            self.inventory[Ticker(0)] -= quantity 
 
     def on_game_event_update(self,
                            event_type: str,
