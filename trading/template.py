@@ -243,6 +243,7 @@ class Strategy:
             # game ends. See reset_state() for more details.
             self.reset_state()
             return
+        self.check_order_book(self, Ticker(0))    
 
     def inc_position(self, team):
         if team == 'home':
@@ -307,7 +308,7 @@ class Strategy:
             for buy in buys:
                 if self.fair_price + 3 < buy:
                     if quantity > self.orderbook['BUY'][ticker][buy]:
-                        place_limit_order(Side(0), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, True)
+                        place_limit_order(Side(0), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, False)
                         quantity -= self.orderbook['BUY'][ticker][buy]
 
                     else:
@@ -320,7 +321,7 @@ class Strategy:
             for sell in sells:
                 if self.fair_price - 3 > sell:
                     if quantity > self.orderbook['SELL'][ticker][sell]:
-                        place_limit_order(Side(0), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, True)
+                        place_limit_order(Side(0), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, False)
                         quantity -= self.orderbook['SELL'][ticker][sell]
 
                     else:
