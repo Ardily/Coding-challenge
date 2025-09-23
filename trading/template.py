@@ -259,8 +259,8 @@ class Strategy:
                 spp: float = 15,
                 h_ppp: float = 1,
                 a_ppp: float = 1,
-                disp: float = 8,
-                sim: int = 50000,
+                disp: float = 12,
+                sim: int = 500000,
                 ball: str | None = None):
         
         pos_left = max(0, time) / max(4, spp)
@@ -283,8 +283,8 @@ class Strategy:
             lambda_h = np.random.gamma(shape = disp, scale = (h_fut / disp), size = sim)
             lambda_a = np.random.gamma(shape = disp, scale =  (a_fut / disp), size = sim)
         
-            pts_h = np.random.poisson(lambda_h)
-            pts_a = np.random.poisson(lambda_a)
+            pts_h = np.random.poisson(lambda_h) * 2
+            pts_a = np.random.poisson(lambda_a) * 2
         
             margin = lead + (pts_h - pts_a)
         
@@ -309,28 +309,24 @@ class Strategy:
             quantity = 10000 // self.fair_price
 
             for buy in buys:
-                if self.fair_price + 3 < buy:
+                if self.fair_price + 1 < buy:
                     if quantity > self.orderbook['BUY'][ticker][buy]:
-                        place_limit_order(Side(0), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, True)
+                        place_limit_order(Side(1), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, True)
                         quantity -= self.orderbook['BUY'][ticker][buy]
 
                     else:
-                        place_limit_order(Side(0), Ticker(0), quantity, buy, True)
+                        place_limit_order(Side(1), Ticker(0), quantity, buy, True)
                         break
         
             for sell in sells:
                 if self.fair_price - 3 > sell:
                     if quantity > self.orderbook['SELL'][ticker][sell]:
-                        place_limit_order(Side(1), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, True)
+                        place_limit_order(Side(0), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, True)
                         quantity -= self.orderbook['SELL'][ticker][sell]
 
                     else:
-                        place_limit_order(Side(1), Ticker(0), quantity, sell, True)
-                        break
-            if self.order_id:
-                self.output = cancel_order(Ticker(0), self.order_id)
-            if self.output == True:
-                self.order_id = place_limit_order(Side(0), Ticker(0), self.inventory[ticker], 5, False)        
+                        place_limit_order(Side(0), Ticker(0), quantity, sell, True)
+                        break       
     
     def possession(self, event_type, team, rebound, swaps):
         if team not in ('home', 'away'):
