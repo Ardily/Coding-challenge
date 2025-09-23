@@ -103,6 +103,7 @@ class Strategy:
         self.inventory = defaultdict(float)
         self.h_ppp = 1.1
         self.a_ppp = 1.1
+        self.order_id = False
 
     def on_trade_update(
         self, ticker: Ticker, side: Side, quantity: float, price: float
@@ -326,9 +327,10 @@ class Strategy:
                     else:
                         place_limit_order(Side(0), Ticker(0), quantity, sell, True)
                         break
-            place_limit_order(Side(1), Ticker(0), self.inventory[ticker], self.fair_price, False)    
-            
-            
+            if self.order_id:
+                output = cancel_order(Ticker(0), self.order_id)
+            if output == True:
+                self.order_id = place_limit_order(Side(1), Ticker(0), self.inventory[ticker], self.fair_price, False)        
     
     def possession(self, event_type, team, rebound, swaps):
         if team not in ('home', 'away'):
