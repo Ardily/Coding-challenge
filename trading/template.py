@@ -101,6 +101,8 @@ class Strategy:
         self.spp = 15.0
         self.period_start = 2880
         self.inventory = defaultdict(float)
+        self.h_ppp = 1.1
+        self.a_ppp = 1.1
 
     def on_trade_update(
         self, ticker: Ticker, side: Side, quantity: float, price: float
