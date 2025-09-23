@@ -83,14 +83,9 @@ class Strategy:
         Note: In production execution, the game will start from the beginning
         and will not be replayed.
         """
-        self.swaps = 0
         self.lead = 0
         self.time = 0.0
         self.has_ball = None
-        self.a_ppp = 1.1
-        self.h_ppp = 1.1
-        self.hn_p = 0
-        self.an_p = 0
 
         pass
 
@@ -314,10 +309,7 @@ class Strategy:
                     else:
                         place_limit_order(Side(0), Ticker(0), quantity, buy, True)
                         break
-
-                else:
-                    pass
-                
+        
             for sell in sells:
                 if self.fair_price - 3 > sell:
                     if quantity > self.orderbook['SELL'][ticker][sell]:
@@ -327,6 +319,7 @@ class Strategy:
                     else:
                         place_limit_order(Side(0), Ticker(0), quantity, sell, True)
                         break
+            
             
     
     def possession(self, event_type, team, rebound, swaps):
