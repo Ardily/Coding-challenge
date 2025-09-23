@@ -308,7 +308,7 @@ class Strategy:
             for buy in buys:
                 if self.fair_price + 3 < buy:
                     if quantity > self.orderbook['BUY'][ticker][buy]:
-                        place_limit_order(Side(0), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, False)
+                        place_limit_order(Side(0), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, True)
                         quantity -= self.orderbook['BUY'][ticker][buy]
 
                     else:
@@ -321,7 +321,7 @@ class Strategy:
             for sell in sells:
                 if self.fair_price - 3 > sell:
                     if quantity > self.orderbook['SELL'][ticker][sell]:
-                        place_limit_order(Side(0), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, False)
+                        place_limit_order(Side(0), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, True)
                         quantity -= self.orderbook['SELL'][ticker][sell]
 
                     else:
