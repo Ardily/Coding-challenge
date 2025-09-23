@@ -90,11 +90,12 @@ class Strategy:
         self.an_p = 0
         self.spp = 15.0
         self.period_start = 2880
-        self.inventory = defaultdict(float)
+        self.inventory = 0
         self.h_ppp = 1.1
         self.a_ppp = 1.1
         self.order_id = False
         self.output = True
+        self.has_ball = None
         self.bids = {}
         self.asks = {}
 
@@ -111,13 +112,15 @@ class Strategy:
         self.an_p = 0
         self.spp = 15.0
         self.period_start = 2880
-        self.inventory = defaultdict(float)
+        self.inventory = 0
         self.h_ppp = 1.1
         self.a_ppp = 1.1
         self.order_id = False
         self.output = True
+        self.has_ball = None
         self.bids = {}
         self.asks = {}
+
 
     def on_trade_update(
         self, ticker: Ticker, side: Side, quantity: float, price: float
@@ -152,13 +155,12 @@ class Strategy:
         quantity
             Volume placed into orderbook
         """
-        
         book = self.bids if side == Side.BUY else self.asks
-        
-        if price in book:
-            book[price] += quantity
-        else:
+        if quantity > 0:
             book[price] = quantity
+        else:
+            if price in book:
+                del book[price]
 
 
     def on_orderbook_snapshot(self, ticker: Ticker, bids: list, asks: list) -> None:
@@ -207,14 +209,9 @@ class Strategy:
         capital_remaining
             Amount of capital after fulfilling order
         """
-        if side == Side.BUY:
-            self.inventory[Ticker(0)] += quantity
 
-        elif side == Side.SELL:
-            self.inventory[Ticker(0)] -= quantity
-
-        else:
-            pass
+        multiplier = 1 if side == Side.BUY else -1
+        self.inventory += multiplier * quantity
 
     def on_game_event_update(self,
                            event_type: str,
@@ -336,40 +333,40 @@ class Strategy:
     def check_order_book(self, ticker: Ticker):
 
         self.fair_price = self.mc_prob(self.lead, self.time, self.spp, self.h_ppp, self.a_ppp, ball = self.has_ball)
-
+        edge = 3
         if self.fair_price is not None:
-            sells = sorted(self.orderbook['SELL'][ticker].keys())
-            buys = sorted(self.orderbook['BUY'][ticker].keys(), reverse=True)
+            sells = sorted(self.asks.items(), key= lambda x: x[0])
+            buys = sorted(self.bids.items(), key = lambda x: x[0], reverse=True)
             quantity = 5000 // self.fair_price
 
-            for buy in buys:
-                if self.inventory(Ticker(0)) < -800:
+            inv = self.inventory
+            for buy, q in buys:
+                if inv < -700:
                     continue
 
                 else:
-                    if self.fair_price + 1 < buy:
-                        if quantity > self.orderbook['BUY'][ticker][buy]:
-                            place_limit_order(Side(1), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, True)
-                            quantity -= self.orderbook['BUY'][ticker][buy]
+                    if self.fair_price + edge < buy:
+                        if quantity > q:
+                            place_limit_order(Side.SELL, Ticker.TEAM_A, q, buy, True)
+                            quantity -= q
 
                         else:
-                            place_limit_order(Side(1), Ticker(0), quantity, buy, True)
+                            place_limit_order(Side.SELL, Ticker.TEAM_A, quantity, buy, True)
                             break
         
-            for sell in sells:
-                if self.inventory[Ticker(0)] > 800:
+            for sell, q in sells:
+                if inv > 700:
                     continue
 
                 else:
-                    if self.fair_price - 3 > sell:
-                        if quantity > self.orderbook['SELL'][ticker][sell]:
-                            place_limit_order(Side(0), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, True)
-                            quantity -= self.orderbook['SELL'][ticker][sell]
+                    if self.fair_price - edge > sell:
+                        if quantity > q:
+                            place_limit_order(Side.BUY, Ticker.TEAM_A, q, sell, True)
+                            quantity -= q
 
                         else:
-                            place_limit_order(Side(0), Ticker(0), quantity, sell, True)
+                            place_limit_order(Side.BUY, Ticker.TEAM_A, quantity, sell, True)
                             break
-                orders = self.inventory / 10
                 
     
     def possession(self, event_type, team, rebound, swaps):
