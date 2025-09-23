@@ -105,6 +105,7 @@ class Strategy:
         self.a_ppp = 1.1
         self.order_id = False
         self.output = True
+
     def on_trade_update(
         self, ticker: Ticker, side: Side, quantity: float, price: float
     ) -> None:
@@ -148,8 +149,11 @@ class Strategy:
         if side is Side.BUY:
             self.orderbook['BUY'][ticker][price] += quantity
         
-        else:
+        elif side is Side.SELL:
             self.orderbook['SELL'][ticker][price] += quantity
+        
+        else:
+            pass
 
         if self.trade_exists:
             self.orderbook['BUY'][self.last_trade[0]][self.last_trade[1]] -= self.last_trade[2]
@@ -181,8 +185,12 @@ class Strategy:
         """
         if side is Side.BUY:
             self.inventory[Ticker(0)] += quantity
+
+        elif side is Side.SELL:
+            self.inventory[Ticker(0)] -= quantity
+
         else:
-            self.inventory[Ticker(0)] -= quantity 
+            pass
 
     def on_game_event_update(self,
                            event_type: str,
@@ -306,27 +314,35 @@ class Strategy:
         if self.fair_price is not None:
             sells = sorted(self.orderbook['SELL'][ticker].keys())
             buys = sorted(self.orderbook['BUY'][ticker].keys(), reverse=True)
-            quantity = 10000 // self.fair_price
+            quantity = 5000 // self.fair_price
 
             for buy in buys:
-                if self.fair_price + 1 < buy:
-                    if quantity > self.orderbook['BUY'][ticker][buy]:
-                        place_limit_order(Side(1), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, True)
-                        quantity -= self.orderbook['BUY'][ticker][buy]
+                if self.inventory(Ticker(0)) < -800:
+                    continue
 
-                    else:
-                        place_limit_order(Side(1), Ticker(0), quantity, buy, True)
-                        break
+                else:
+                    if self.fair_price + 1 < buy:
+                        if quantity > self.orderbook['BUY'][ticker][buy]:
+                            place_limit_order(Side(1), Ticker(0), self.orderbook['BUY'][ticker][buy], buy, True)
+                            quantity -= self.orderbook['BUY'][ticker][buy]
+
+                        else:
+                            place_limit_order(Side(1), Ticker(0), quantity, buy, True)
+                            break
         
             for sell in sells:
-                if self.fair_price - 3 > sell:
-                    if quantity > self.orderbook['SELL'][ticker][sell]:
-                        place_limit_order(Side(0), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, True)
-                        quantity -= self.orderbook['SELL'][ticker][sell]
+                if self.inventory(Ticker(0)) > 800:
+                    continue
 
-                    else:
-                        place_limit_order(Side(0), Ticker(0), quantity, sell, True)
-                        break       
+                else:
+                    if self.fair_price - 3 > sell:
+                        if quantity > self.orderbook['SELL'][ticker][sell]:
+                            place_limit_order(Side(0), Ticker(0), self.orderbook['SELL'][ticker][sell], sell, True)
+                            quantity -= self.orderbook['SELL'][ticker][sell]
+
+                        else:
+                            place_limit_order(Side(0), Ticker(0), quantity, sell, True)
+                            break
     
     def possession(self, event_type, team, rebound, swaps):
         if team not in ('home', 'away'):
