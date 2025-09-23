@@ -243,7 +243,7 @@ class Strategy:
             # game ends. See reset_state() for more details.
             self.reset_state()
             return
-        self.check_order_book(self, Ticker(0))    
+        self.check_order_book(Ticker(0))    
 
     def inc_position(self, team):
         if team == 'home':
