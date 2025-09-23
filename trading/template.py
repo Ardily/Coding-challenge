@@ -158,9 +158,8 @@ class Strategy:
         book = self.bids if side == Side.BUY else self.asks
         if quantity > 0:
             book[price] = quantity
-        else:
-            if price in book:
-                del book[price]
+        elif price in book:
+            del book[price]
 
 
     def on_orderbook_snapshot(self, ticker: Ticker, bids: list, asks: list) -> None:
