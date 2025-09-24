@@ -115,7 +115,7 @@ class Strategy:
         self.spp = 15.0
         self.period_start = 2880
         self.inventory = 0
-        self.h_ppp = 1.1
+        self.h_ppp = 1.25
         self.a_ppp = 1.1
         self.order_id = False
         self.output = True
@@ -284,7 +284,7 @@ class Strategy:
         if start_time - self.time > 60 and self.close_postion == False:
             self.check_order_book(Ticker.TEAM_A)
 
-        if self.time < 30:
+        if self.time < 90:
             if self.inventory < 0:
                 place_market_order(Side.BUY, Ticker.TEAM_A, abs(self.inventory))
                 self.close_postion = True
@@ -306,9 +306,9 @@ class Strategy:
                 lead: int,
                 time: float,
                 spp: float = 15,
-                h_ppp: float = 1,
+                h_ppp: float = 1.2,
                 a_ppp: float = 1,
-                disp: float = 12,
+                disp: float = 15,
                 sim: int = 50000,
                 ball: str | None = None):
         
@@ -343,7 +343,7 @@ class Strategy:
         
             price = prob * 100
         
-            return price
+            return min(100, price-2)
         return None
     
 
@@ -352,43 +352,48 @@ class Strategy:
 
         self.fair_price = self.mc_prob(self.lead, self.time, self.spp, self.h_ppp, self.a_ppp, ball = self.has_ball)
         edge = 3
-        if self.fair_price is not None:
+        if self.asks and self.bids:
             sells = sorted(self.asks.items(), key= lambda x: x[0])
             buys = sorted(self.bids.items(), key = lambda x: x[0], reverse=True)
+            mid = (sells[0][0]+buys[0][0]) / 2
+
             if buys and sells:
-                print(f'fair price: {self.fair_price}, market mid: {(sells[0][0]+buys[0][0]) / 2}')
+                print(f'fair price: {self.fair_price}, market mid: {mid}')
             quantity = 5000 // self.fair_price
 
             inv = self.inventory
-            for buy, q in buys:
-                if inv < -700:
-                    continue
 
-                else:
-                    if self.fair_price + edge < buy:
-                        if quantity > q:
-                            place_limit_order(Side.SELL, Ticker.TEAM_A, q, buy, True)
-                            quantity -= q
+            if mid > 15 :
+                for buy, q in buys:
+                    if inv < -700:
+                        continue
 
-                        else:
-                            place_limit_order(Side.SELL, Ticker.TEAM_A, quantity, buy, True)
-                            break
-        
-            for sell, q in sells:
-                if inv > 700:
-                    continue
+                    else:
+                        if self.fair_price + edge < buy:
+                            if quantity > q:
+                                place_limit_order(Side.SELL, Ticker.TEAM_A, q, buy, True)
+                                quantity -= q
 
-                else:
-                    if self.fair_price - edge > sell:
-                        if quantity > q:
-                            place_limit_order(Side.BUY, Ticker.TEAM_A, q, sell, True)
-                            quantity -= q
+                            else:
+                                place_limit_order(Side.SELL, Ticker.TEAM_A, quantity, buy, True)
+                                break
 
-                        else:
-                            place_limit_order(Side.BUY, Ticker.TEAM_A, quantity, sell, True)
-                            break
+            if mid < 85:                    
+                for sell, q in sells:
+                    if inv > 700:
+                        continue
 
-            place_limit_order(Side.SELL, Ticker.TEAM_A, inv, self.fair_price + edge)
+                    else:
+                        if self.fair_price - edge > sell:
+                            if quantity > q:
+                                place_limit_order(Side.BUY, Ticker.TEAM_A, q, sell, True)
+                                quantity -= q
+
+                            else:
+                                place_limit_order(Side.BUY, Ticker.TEAM_A, quantity, sell, True)
+                                break
+            if inv > 0 and mid < 85:
+                place_limit_order(Side.SELL, Ticker.TEAM_A, inv, self.fair_price + edge)
                 
     
     def possession(self, event_type, team, rebound, swaps):
