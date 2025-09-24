@@ -98,6 +98,8 @@ class Strategy:
         self.has_ball = None
         self.bids = {}
         self.asks = {}
+        self.close_postion = False
+        self.track_orders = []
 
         pass
 
@@ -120,6 +122,8 @@ class Strategy:
         self.has_ball = None
         self.bids = {}
         self.asks = {}
+        self.close_postion = False
+        self.track_orders = []
 
 
     def on_trade_update(
@@ -212,6 +216,8 @@ class Strategy:
         multiplier = 1 if side == Side.BUY else -1
         self.inventory += multiplier * quantity
 
+        self.track_orders.append((side, price, quantity))
+
     def on_game_event_update(self,
                            event_type: str,
                            home_away: str,
@@ -274,8 +280,21 @@ class Strategy:
             # game ends. See reset_state() for more details.
             self.reset_state()
             return
-        if start_time - self.time > 60:
-            self.check_order_book(Ticker(0))
+        
+        if start_time - self.time > 60 and self.close_postion == False:
+            self.check_order_book(Ticker.TEAM_A)
+
+        if self.time < 30:
+            if self.inventory < 0:
+                place_market_order(Side.BUY, Ticker.TEAM_A, abs(self.inventory))
+                self.close_postion == True
+            
+            elif self.inventory > 0:
+                place_market_order(Side.SELL, Ticker.TEAM_A, abs(self.inventory))
+                self.close_postion == True
+
+            else:
+                self.close_postion == True
 
     def inc_position(self, team):
         if team == 'home':
@@ -346,11 +365,11 @@ class Strategy:
                 else:
                     if self.fair_price + edge < buy:
                         if quantity > q:
-                            place_limit_order(Side.SELL, Ticker.TEAM_A, q, buy)
+                            place_limit_order(Side.SELL, Ticker.TEAM_A, q, buy, True)
                             quantity -= q
 
                         else:
-                            place_limit_order(Side.SELL, Ticker.TEAM_A, quantity, buy)
+                            place_limit_order(Side.SELL, Ticker.TEAM_A, quantity, buy, True)
                             break
         
             for sell, q in sells:
@@ -360,12 +379,14 @@ class Strategy:
                 else:
                     if self.fair_price - edge > sell:
                         if quantity > q:
-                            place_limit_order(Side.BUY, Ticker.TEAM_A, q, sell)
+                            place_limit_order(Side.BUY, Ticker.TEAM_A, q, sell, True)
                             quantity -= q
 
                         else:
-                            place_limit_order(Side.BUY, Ticker.TEAM_A, quantity, sell)
+                            place_limit_order(Side.BUY, Ticker.TEAM_A, quantity, sell, True)
                             break
+
+            place_limit_order(Side.SELL, Ticker.TEAM_A, inv, self.fair_price + edge)
                 
     
     def possession(self, event_type, team, rebound, swaps):
