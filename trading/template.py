@@ -355,6 +355,7 @@ class Strategy:
         if self.fair_price is not None:
             sells = sorted(self.asks.items(), key= lambda x: x[0])
             buys = sorted(self.bids.items(), key = lambda x: x[0], reverse=True)
+            print(f'fair price: {self.fair_price}, market mid: {(max(self.bids)+min(self.asks)) / 2}')
             quantity = 5000 // self.fair_price
 
             inv = self.inventory
