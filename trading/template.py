@@ -346,11 +346,11 @@ class Strategy:
                 else:
                     if self.fair_price + edge < buy:
                         if quantity > q:
-                            place_limit_order(Side.SELL, Ticker.TEAM_A, q, buy, True)
+                            place_limit_order(Side.SELL, Ticker.TEAM_A, q, buy)
                             quantity -= q
 
                         else:
-                            place_limit_order(Side.SELL, Ticker.TEAM_A, quantity, buy, True)
+                            place_limit_order(Side.SELL, Ticker.TEAM_A, quantity, buy)
                             break
         
             for sell, q in sells:
@@ -360,11 +360,11 @@ class Strategy:
                 else:
                     if self.fair_price - edge > sell:
                         if quantity > q:
-                            place_limit_order(Side.BUY, Ticker.TEAM_A, q, sell, True)
+                            place_limit_order(Side.BUY, Ticker.TEAM_A, q, sell)
                             quantity -= q
 
                         else:
-                            place_limit_order(Side.BUY, Ticker.TEAM_A, quantity, sell, True)
+                            place_limit_order(Side.BUY, Ticker.TEAM_A, quantity, sell)
                             break
                 
     
