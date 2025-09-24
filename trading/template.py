@@ -287,14 +287,14 @@ class Strategy:
         if self.time < 30:
             if self.inventory < 0:
                 place_market_order(Side.BUY, Ticker.TEAM_A, abs(self.inventory))
-                self.close_postion == True
+                self.close_postion = True
             
             elif self.inventory > 0:
                 place_market_order(Side.SELL, Ticker.TEAM_A, abs(self.inventory))
-                self.close_postion == True
+                self.close_postion = True
 
             else:
-                self.close_postion == True
+                self.close_postion = True
 
     def inc_position(self, team):
         if team == 'home':
